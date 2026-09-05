@@ -1,0 +1,88 @@
+name: Deploy web client to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.EXPO_PUBLIC_SERVER_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install all workspaces
+        run: npm ci
+
+      - name: Validate public backend URL
+        shell: bash
+        env:
+          SERVER_URL: ${{ vars.EXPO_PUBLIC_SERVER_URL }}
+        run: |
+          if [[ -z "$SERVER_URL" ]]; then
+            echo "::error::Create a repository Actions variable named EXPO_PUBLIC_SERVER_URL."
+            exit 1
+          fi
+          if [[ ! "$SERVER_URL" =~ ^https:// ]]; then
+            echo "::error::EXPO_PUBLIC_SERVER_URL must begin with https:// for GitHub Pages."
+            exit 1
+          fi
+
+      - name: Detect GitHub Pages base path
+        id: base
+        shell: bash
+        run: |
+          repo_name="$(basename "$GITHUB_REPOSITORY")"
+          if [[ "$repo_name" == *.github.io ]]; then
+            echo "path=" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=/$repo_name" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build web client
+        run: npm run build:web
+        env:
+          EXPO_PUBLIC_SERVER_URL: ${{ vars.EXPO_PUBLIC_SERVER_URL }}
+          EXPO_PUBLIC_BASE_URL: ${{ steps.base.outputs.path }}
+
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

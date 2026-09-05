@@ -1,0 +1,60 @@
+{
+  "name": "arabic-codenames",
+  "version": "1.0.0",
+  "description": "لعبة الشفرة العربية الجماعية - React Native and Socket.IO",
+  "main": "index.js",
+  "workspaces": [
+    "server"
+  ],
+  "dependencies": {
+    "@expo-google-fonts/tajawal": "^0.4.1",
+    "@expo/metro-runtime": "~57.0.15",
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/native": "^7.3.18",
+    "@react-navigation/native-stack": "^7.18.10",
+    "expo": "~57.0.20",
+    "expo-camera": "~57.0.4",
+    "expo-clipboard": "~57.0.1",
+    "expo-constants": "~57.0.17",
+    "expo-font": "~57.0.3",
+    "expo-haptics": "~57.0.2",
+    "expo-linear-gradient": "~57.0.1",
+    "expo-linking": "~57.0.9",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "socket.io-client": "^4.8.3"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:web": "node scripts/dev.js --web",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "node scripts/dev.js --web",
+    "web:app": "expo start --web",
+    "build:web": "expo export --platform web",
+    "serve:web": "expo serve",
+    "server": "npm --workspace server start",
+    "server:dev": "npm --workspace server run dev",
+    "test": "npm --workspace server test",
+    "doctor": "expo-doctor",
+    "check": "npm test && npm run doctor && npm run build:web"
+  },
+  "devDependencies": {
+    "expo-doctor": "1.20.4"
+  },
+  "engines": {
+    "node": ">=22.13.0",
+    "npm": ">=10"
+  },
+  "license": "MIT",
+  "private": true
+}

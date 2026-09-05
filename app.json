@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "الشفرة",
+    "slug": "arabic-codenames",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "codenames",
+    "icon": "./assets/game-icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#08121F",
+    "plugins": [
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "نحتاج إلى الكاميرا لمسح رمز الغرفة",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.arabiccodenames.game",
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "ar",
+        "NSCameraUsageDescription": "نحتاج إلى الكاميرا لمسح رمز الغرفة"
+      }
+    },
+    "android": {
+      "package": "com.arabiccodenames.game",
+      "adaptiveIcon": {
+        "backgroundColor": "#08121F",
+        "foregroundImage": "./assets/game-icon.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": ["CAMERA"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [{ "scheme": "codenames", "host": "join" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

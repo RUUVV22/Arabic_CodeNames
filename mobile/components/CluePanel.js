@@ -1,0 +1,113 @@
+import React, { useState } from 'react';
+import { StyleSheet, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ArabicText } from './ArabicText';
+import { PrimaryButton } from './PrimaryButton';
+import { colors, teamColor } from '../theme/colors';
+import { radius, spacing } from '../theme/layout';
+
+export function CluePanel({ clue, canGiveClue, waitingForClue, team, loading, onGiveClue }) {
+  const [word, setWord] = useState('');
+  const [count, setCount] = useState('1');
+
+  if (clue) {
+    return (
+      <View style={[styles.display, { borderColor: teamColor(clue.team) }]}>
+        <Ionicons name="bulb" size={22} color={colors.gold} />
+        <View style={styles.clueCopy}>
+          <ArabicText style={styles.caption}>التلميح الحالي</ArabicText>
+          <ArabicText weight="extraBold" style={styles.clueText}>{clue.word} — {clue.count}</ArabicText>
+        </View>
+      </View>
+    );
+  }
+
+  if (canGiveClue) {
+    return (
+      <View style={styles.form}>
+        <ArabicText weight="bold" style={styles.formTitle}>أعطِ فريقك تلميحاً</ArabicText>
+        <View style={styles.fields}>
+          <TextInput
+            value={word}
+            onChangeText={setWord}
+            placeholder="الكلمة الدالة"
+            placeholderTextColor={colors.muted}
+            maxLength={24}
+            returnKeyType="done"
+            style={[styles.input, styles.wordInput]}
+          />
+          <TextInput
+            value={count}
+            onChangeText={(value) => setCount(value.replace(/\D/g, '').slice(0, 1))}
+            keyboardType="number-pad"
+            maxLength={1}
+            style={[styles.input, styles.countInput]}
+          />
+        </View>
+        <PrimaryButton
+          compact
+          title="إعطاء التلميح"
+          icon="bulb-outline"
+          variant={team === 'RED' ? 'red' : 'blue'}
+          loading={loading}
+          disabled={!word.trim() || !count}
+          onPress={async () => {
+            const response = await onGiveClue(word, Number(count));
+            if (response?.ok) setWord('');
+          }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.waiting}>
+      <Ionicons name="hourglass-outline" size={19} color={colors.muted} />
+      <ArabicText style={styles.waitingText}>
+        {waitingForClue ? 'بانتظار تلميح قائد الفريق…' : 'قائد الفريق الآخر يفكر في التلميح…'}
+      </ArabicText>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  display: {
+    minHeight: 58,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    backgroundColor: colors.panelRaised,
+    paddingHorizontal: spacing.md,
+  },
+  clueCopy: { flex: 1 },
+  caption: { color: colors.muted, fontSize: 11 },
+  clueText: { color: colors.gold, fontSize: 21 },
+  form: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.panelRaised },
+  formTitle: { fontSize: 14 },
+  fields: { flexDirection: 'row-reverse', gap: spacing.sm },
+  input: {
+    minHeight: 42,
+    borderRadius: radius.sm,
+    backgroundColor: colors.paper,
+    color: colors.ink,
+    fontFamily: 'Tajawal_500Medium',
+    fontSize: 15,
+    paddingHorizontal: spacing.md,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  wordInput: { flex: 1 },
+  countInput: { width: 58, textAlign: 'center', writingDirection: 'ltr' },
+  waiting: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 48,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  waitingText: { color: colors.muted, fontSize: 13, textAlign: 'center' },
+});

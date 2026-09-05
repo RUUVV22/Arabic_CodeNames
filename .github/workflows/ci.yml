@@ -1,0 +1,42 @@
+name: Verify project
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install all workspaces
+        run: npm ci
+
+      - name: Run multiplayer server tests
+        run: npm test
+
+      - name: Validate Expo dependencies and configuration
+        run: npm run doctor
+
+      - name: Build production web bundle
+        run: npm run build:web
+        env:
+          EXPO_PUBLIC_SERVER_URL: https://example.invalid
+
+      - name: Build backend container
+        run: docker build --tag arabic-codenames-server:ci ./server
