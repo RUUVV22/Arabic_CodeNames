@@ -1,5 +1,6 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
 import { SplashScreen } from '../screens/SplashScreen';
@@ -10,10 +11,13 @@ import { QRScannerScreen } from '../screens/QRScannerScreen';
 import { LobbyScreen } from '../screens/LobbyScreen';
 import { GameScreen } from '../screens/GameScreen';
 import { HowToPlayScreen } from '../screens/HowToPlayScreen';
+import { useGame } from '../context/GameContext';
+import { STATUS } from '../constants/game';
 import { parseRoomCode } from '../utils/deepLinks';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
 
 function normalizeJoinUrl(url) {
   const roomCode = parseRoomCode(url);
@@ -21,7 +25,7 @@ function normalizeJoinUrl(url) {
   return Linking.createURL(`join/${roomCode}`);
 }
 
-const linking = {
+const nativeLinking = {
   prefixes: ['codenames://', Linking.createURL('/')],
   async getInitialURL() {
     return normalizeJoinUrl(await Linking.getInitialURL());
@@ -38,8 +42,51 @@ const linking = {
 };
 
 export function AppNavigator() {
+  const { ready, session, gameState } = useGame();
+  const [navigationReady, setNavigationReady] = useState(false);
+  const initialWebRoomCode = useRef(
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? parseRoomCode(window.location.href)
+      : null,
+  );
+  const handledWebRoomLink = useRef(false);
+
+  useEffect(() => {
+    const roomCode = initialWebRoomCode.current;
+    if (
+      Platform.OS !== 'web'
+      || !navigationReady
+      || !ready
+      || !roomCode
+      || handledWebRoomLink.current
+      || !navigationRef.isReady()
+    ) return;
+
+    if (session?.roomCode === roomCode) {
+      if (!gameState) return;
+      navigationRef.reset({
+        index: 0,
+        routes: [{ name: gameState.status === STATUS.LOBBY ? 'Lobby' : 'Game' }],
+      });
+    } else {
+      navigationRef.reset({
+        index: 1,
+        routes: [
+          { name: 'Home' },
+          { name: 'JoinRoom', params: { roomCode } },
+        ],
+      });
+    }
+
+    handledWebRoomLink.current = true;
+  }, [gameState, navigationReady, ready, session?.roomCode]);
+
   return (
-    <NavigationContainer linking={linking} theme={{
+    <NavigationContainer
+      ref={navigationRef}
+      linking={Platform.OS === 'web' ? undefined : nativeLinking}
+      onReady={() => setNavigationReady(true)}
+      theme={{
       dark: true,
       colors: {
         primary: colors.gold,
