@@ -70,6 +70,12 @@ function registerSocketHandlers(io, roomManager) {
       return {};
     });
 
+    handle('lobby:choose-team', ({ team }) => {
+      const room = roomManager.chooseTeam({ socketId: socket.id, team });
+      emitRoom(room.roomId);
+      return {};
+    });
+
     handle('lobby:remove-player', ({ playerId }) => {
       const { room, removedPlayer } = roomManager.removePlayer({
         socketId: socket.id,

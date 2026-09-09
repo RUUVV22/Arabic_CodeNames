@@ -5,11 +5,21 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "codenames",
-    "icon": "./assets/game-icon.png",
+    "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#08121F",
     "plugins": [
       "expo-font",
+      "expo-asset",
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false,
+          "microphonePermission": false,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ],
       [
         "expo-camera",
         {
@@ -22,6 +32,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.arabiccodenames.game",
+      "icon": "./assets/app-icon.png",
       "infoPlist": {
         "CFBundleDevelopmentRegion": "ar",
         "NSCameraUsageDescription": "نحتاج إلى الكاميرا لمسح رمز الغرفة"
@@ -47,7 +58,25 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "الشفرة العربية",
+      "shortName": "الشفرة",
+      "description": "لعبة الشفرة العربية الجماعية",
+      "lang": "ar",
+      "dir": "rtl",
+      "display": "standalone",
+      "startUrl": ".",
+      "scope": ".",
+      "orientation": "portrait",
+      "themeColor": "#08121F",
+      "backgroundColor": "#08121F",
+      "barStyle": "black-translucent",
+      "preferRelatedApplications": false,
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#08121F"
+      }
     }
   }
 }

@@ -1,23 +1,44 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ArabicText } from './ArabicText';
 import { PrimaryButton } from './PrimaryButton';
 import { colors, teamColor } from '../theme/colors';
 import { radius, spacing } from '../theme/layout';
 
-export function CluePanel({ clue, canGiveClue, waitingForClue, team, loading, onGiveClue }) {
+function ClueHistory({ clues, hasCurrent = false }) {
+  if (!clues.length) return null;
+  return (
+    <View style={styles.history}>
+      <ArabicText weight="bold" style={styles.historyTitle}>تلميحات هذه الجولة</ArabicText>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.historyList}>
+        {[...clues].reverse().map((item, index) => (
+          <View key={`${item.team}-${item.givenBy}-${item.word}-${index}`} style={[styles.historyItem, { borderColor: teamColor(item.team) }]}>
+            <View style={[styles.historyDot, { backgroundColor: teamColor(item.team) }]} />
+            <ArabicText weight="bold" style={styles.historyText}>{item.word} — {item.count}</ArabicText>
+            {index === 0 && hasCurrent ? <ArabicText style={styles.currentBadge}>الحالي</ArabicText> : null}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+export function CluePanel({ clue, clueHistory = [], showHistory, canGiveClue, waitingForClue, team, loading, onGiveClue }) {
   const [word, setWord] = useState('');
   const [count, setCount] = useState('1');
 
   if (clue) {
     return (
-      <View style={[styles.display, { borderColor: teamColor(clue.team) }]}>
-        <Ionicons name="bulb" size={22} color={colors.gold} />
-        <View style={styles.clueCopy}>
-          <ArabicText style={styles.caption}>التلميح الحالي</ArabicText>
-          <ArabicText weight="extraBold" style={styles.clueText}>{clue.word} — {clue.count}</ArabicText>
+      <View style={styles.stack}>
+        <View style={[styles.display, { borderColor: teamColor(clue.team) }]}>
+          <Ionicons name="bulb" size={22} color={colors.gold} />
+          <View style={styles.clueCopy}>
+            <ArabicText style={styles.caption}>التلميح الحالي</ArabicText>
+            <ArabicText weight="extraBold" style={styles.clueText}>{clue.word} — {clue.count}</ArabicText>
+          </View>
         </View>
+        {showHistory ? <ClueHistory clues={clueHistory} hasCurrent /> : null}
       </View>
     );
   }
@@ -61,16 +82,20 @@ export function CluePanel({ clue, canGiveClue, waitingForClue, team, loading, on
   }
 
   return (
-    <View style={styles.waiting}>
-      <Ionicons name="hourglass-outline" size={19} color={colors.muted} />
-      <ArabicText style={styles.waitingText}>
-        {waitingForClue ? 'بانتظار تلميح قائد الفريق…' : 'قائد الفريق الآخر يفكر في التلميح…'}
-      </ArabicText>
+    <View style={styles.stack}>
+      <View style={styles.waiting}>
+        <Ionicons name="hourglass-outline" size={19} color={colors.muted} />
+        <ArabicText style={styles.waitingText}>
+          {waitingForClue ? 'بانتظار تلميح قائد الفريق…' : 'قائد الفريق الآخر يفكر في التلميح…'}
+        </ArabicText>
+      </View>
+      {showHistory ? <ClueHistory clues={clueHistory} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  stack: { gap: spacing.xs },
   display: {
     minHeight: 58,
     flexDirection: 'row-reverse',
@@ -110,4 +135,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   waitingText: { color: colors.muted, fontSize: 13, textAlign: 'center' },
+  history: { gap: 4 },
+  historyTitle: { color: colors.paperMuted, fontSize: 10 },
+  historyList: { flexDirection: 'row-reverse', gap: spacing.xs },
+  historyItem: { minHeight: 28, flexDirection: 'row-reverse', alignItems: 'center', gap: 5, paddingHorizontal: 8, borderWidth: 1, borderRadius: radius.pill, backgroundColor: colors.panel },
+  historyDot: { width: 6, height: 6, borderRadius: 3 },
+  historyText: { color: colors.paper, fontSize: 10 },
+  currentBadge: { color: colors.gold, fontSize: 8 },
 });

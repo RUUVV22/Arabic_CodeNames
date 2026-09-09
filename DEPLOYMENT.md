@@ -113,7 +113,9 @@ The workflow automatically:
 
 - detects whether the site is hosted at `/REPOSITORY-NAME` or the domain root;
 - configures Expo's production base URL;
+- embeds the public Pages URL used by room QR invitations;
 - exports the web bundle;
+- generates the installable web-app manifest, service worker, home-screen icons, and SPA fallback;
 - disables Jekyll processing for Expo's `_expo` directory;
 - uploads and deploys the GitHub Pages artifact.
 
@@ -122,6 +124,8 @@ The public site will normally be:
 ```text
 https://YOUR-NAME.github.io/YOUR-REPOSITORY/
 ```
+
+On Android, use the in-app **install** button or the browser's **Install app** command. On iPhone, open the site in Safari, tap **Share**, then **Add to Home Screen**. Both launch with the `الشفرة` icon in standalone mode.
 
 ## 6. Native iOS and Android builds
 

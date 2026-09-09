@@ -66,6 +66,7 @@ jobs:
         env:
           EXPO_PUBLIC_SERVER_URL: ${{ vars.EXPO_PUBLIC_SERVER_URL }}
           EXPO_PUBLIC_BASE_URL: ${{ steps.base.outputs.path }}
+          EXPO_PUBLIC_APP_URL: https://${{ github.repository_owner }}.github.io${{ steps.base.outputs.path }}/
 
       - name: Disable Jekyll processing
         run: touch dist/.nojekyll

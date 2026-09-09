@@ -10,11 +10,26 @@ import { QRScannerScreen } from '../screens/QRScannerScreen';
 import { LobbyScreen } from '../screens/LobbyScreen';
 import { GameScreen } from '../screens/GameScreen';
 import { HowToPlayScreen } from '../screens/HowToPlayScreen';
+import { parseRoomCode } from '../utils/deepLinks';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
+
+function normalizeJoinUrl(url) {
+  const roomCode = parseRoomCode(url);
+  if (!roomCode || /\/join\/[A-Z2-9]{5}(?:[/?#]|$)/i.test(String(url))) return url;
+  return Linking.createURL(`join/${roomCode}`);
+}
+
 const linking = {
   prefixes: ['codenames://', Linking.createURL('/')],
+  async getInitialURL() {
+    return normalizeJoinUrl(await Linking.getInitialURL());
+  },
+  subscribe(listener) {
+    const subscription = Linking.addEventListener('url', ({ url }) => listener(normalizeJoinUrl(url)));
+    return () => subscription.remove();
+  },
   config: {
     screens: {
       JoinRoom: 'join/:roomCode',

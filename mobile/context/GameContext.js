@@ -146,26 +146,32 @@ export function GameProvider({ children }) {
       [SESSION_STORAGE_KEY, JSON.stringify(nextSession)],
       [LAST_NAME_STORAGE_KEY, name],
     ]);
+    soundService.play('join');
   }, []);
-
-  const createRoom = useCallback(async (name) => {
-    const response = await emitAction('room:create', { name });
-    if (response.ok) await persistJoinedSession(response, String(name).trim());
-    return response;
-  }, [emitAction, persistJoinedSession]);
-
-  const joinRoom = useCallback(async (roomCode, name) => {
-    const response = await emitAction('room:join', { roomCode, name });
-    if (response.ok) await persistJoinedSession(response, String(name).trim());
-    return response;
-  }, [emitAction, persistJoinedSession]);
 
   const leaveRoom = useCallback(async () => {
     if (socketRef.current?.connected && sessionRef.current) {
+      soundService.play('leave');
       await emitAction('room:leave');
     }
     await clearLocalSession();
   }, [clearLocalSession, emitAction]);
+
+  const createRoom = useCallback(async (name) => {
+    if (sessionRef.current) await leaveRoom();
+    const response = await emitAction('room:create', { name });
+    if (response.ok) await persistJoinedSession(response, String(name).trim());
+    return response;
+  }, [emitAction, leaveRoom, persistJoinedSession]);
+
+  const joinRoom = useCallback(async (roomCode, name) => {
+    const normalizedRoomCode = String(roomCode || '').trim().toUpperCase();
+    if (sessionRef.current?.roomCode === normalizedRoomCode) return { ok: true, resumed: true };
+    if (sessionRef.current) await leaveRoom();
+    const response = await emitAction('room:join', { roomCode, name });
+    if (response.ok) await persistJoinedSession(response, String(name).trim());
+    return response;
+  }, [emitAction, leaveRoom, persistJoinedSession]);
 
   const updateServerUrl = useCallback(async (value) => {
     const normalized = normalizeServerUrl(value);
@@ -194,6 +200,7 @@ export function GameProvider({ children }) {
     joinRoom,
     leaveRoom,
     updatePlayer: (playerId, team, role) => emitAction('lobby:update-player', { playerId, team, role }),
+    chooseTeam: (team) => emitAction('lobby:choose-team', { team }),
     removePlayer: (playerId) => emitAction('lobby:remove-player', { playerId }),
     startGame: () => emitAction('game:start'),
     giveClue: (word, count) => emitAction('game:give-clue', { word, count }),

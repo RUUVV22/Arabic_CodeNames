@@ -29,6 +29,8 @@ export const teamColor = (team) => (team === 'RED' ? colors.red : colors.blue);
 export const cardColor = (type) => ({
   RED: colors.red,
   BLUE: colors.blue,
-  NEUTRAL: colors.neutralDark,
+  NEUTRAL: colors.neutral,
   ASSASSIN: colors.assassin,
 }[type] || colors.paper);
+
+export const cardTextColor = (type) => (type === 'NEUTRAL' ? colors.ink : colors.white);

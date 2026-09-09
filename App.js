@@ -12,6 +12,7 @@ import {
 import { GameProvider } from './mobile/context/GameContext';
 import { AppNavigator } from './mobile/navigation/AppNavigator';
 import { GlobalNotice } from './mobile/components/GlobalNotice';
+import { GameAudio } from './mobile/components/GameAudio';
 import { colors } from './mobile/theme/colors';
 
 if (Platform.OS === 'web') {
@@ -37,6 +38,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <GameProvider>
+        <GameAudio />
         <StatusBar style="light" />
         <AppNavigator />
         <GlobalNotice />

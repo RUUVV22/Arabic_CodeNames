@@ -1,6 +1,5 @@
 import * as Haptics from 'expo-haptics';
 
-// نقطة مركزية يمكن لاحقاً ربط ملفات صوتية بها من دون تغيير الشاشات.
 class SoundService {
   constructor() {
     this.muted = false;
@@ -15,14 +14,25 @@ class SoundService {
     this.players.set(name, player);
   }
 
+  unregister(name, player) {
+    if (this.players.get(name) === player) this.players.delete(name);
+  }
+
   async play(name) {
     if (this.muted) return;
     const player = this.players.get(name);
-    if (player) await player.replayAsync?.();
+    if (player) {
+      try {
+        await player.seekTo?.(0);
+        player.play?.();
+      } catch {
+        // Audio may be blocked until the first browser interaction; haptics still run on native.
+      }
+    }
 
-    const feedback = name === 'victory'
+    const feedback = ['victory', 'correct'].includes(name)
       ? Haptics.NotificationFeedbackType.Success
-      : name === 'defeat'
+      : ['defeat', 'assassin', 'wrong'].includes(name)
         ? Haptics.NotificationFeedbackType.Error
         : null;
     if (feedback) {

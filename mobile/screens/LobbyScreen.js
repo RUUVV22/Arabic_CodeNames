@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -13,6 +13,8 @@ import { useGame } from '../context/GameContext';
 import { ROLE, STATUS, TEAM } from '../constants/game';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/layout';
+import { roomJoinUrl } from '../utils/deepLinks';
+import { soundService } from '../services/sounds';
 
 export function LobbyScreen({ navigation }) {
   const {
@@ -23,11 +25,20 @@ export function LobbyScreen({ navigation }) {
     session,
     showNotice,
   } = useGame();
+  const previousPlayerCount = useRef(null);
 
   useEffect(() => {
     if (!session) navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
     else if (gameState?.status === STATUS.ACTIVE || gameState?.status === STATUS.FINISHED) navigation.replace('Game');
   }, [gameState?.status, navigation, session]);
+
+  useEffect(() => {
+    const nextCount = gameState?.players?.length;
+    if (Number.isInteger(nextCount) && Number.isInteger(previousPlayerCount.current) && nextCount !== previousPlayerCount.current) {
+      soundService.play(nextCount > previousPlayerCount.current ? 'join' : 'leave');
+    }
+    if (Number.isInteger(nextCount)) previousPlayerCount.current = nextCount;
+  }, [gameState?.players?.length]);
 
   if (!gameState) {
     return (
@@ -102,15 +113,31 @@ export function LobbyScreen({ navigation }) {
         <View style={styles.inviteCopy}>
           <ArabicText weight="bold" style={styles.inviteTitle}>ادعُ أصدقاءك</ArabicText>
           <ArabicText style={styles.inviteText}>يمكنهم كتابة الرمز أو مسح QR من شاشة الانضمام.</ArabicText>
-          <ArabicText style={styles.deepLink}>codenames://join/{gameState.roomId}</ArabicText>
+          <ArabicText style={styles.deepLink}>{roomJoinUrl(gameState.roomId)}</ArabicText>
         </View>
       </View>
 
       <ArabicText weight="bold" style={styles.sectionTitle}>الفرق والأدوار</ArabicText>
-      {isHost ? <ArabicText style={styles.editHelp}>اضغط على الدور لتغييره، أو استخدم زر النقل بين الفريقين.</ArabicText> : null}
+      <ArabicText style={styles.editHelp}>
+        اختر فريقك بنفسك من زر «انضم»{isHost ? '، ويمكنك كذلك إدارة أدوار بقية اللاعبين.' : '.'}
+      </ArabicText>
       <View style={styles.teams}>
-        <TeamPanel team={TEAM.RED} players={redPlayers} {...playerListProps} />
-        <TeamPanel team={TEAM.BLUE} players={bluePlayers} {...playerListProps} />
+        <TeamPanel
+          team={TEAM.RED}
+          players={redPlayers}
+          selected={me?.team === TEAM.RED}
+          joining={busyAction === 'lobby:choose-team'}
+          onJoin={() => actions.chooseTeam(TEAM.RED)}
+          {...playerListProps}
+        />
+        <TeamPanel
+          team={TEAM.BLUE}
+          players={bluePlayers}
+          selected={me?.team === TEAM.BLUE}
+          joining={busyAction === 'lobby:choose-team'}
+          onJoin={() => actions.chooseTeam(TEAM.BLUE)}
+          {...playerListProps}
+        />
       </View>
 
       <View style={[styles.readiness, gameState.canStart && styles.ready]}>

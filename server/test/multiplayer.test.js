@@ -139,6 +139,12 @@ test('lobby auto-assigns both teams, enforces host controls, and blocks an unrea
   assert.equal(room.players[0].team, TEAM.RED);
   assert.equal(room.players[1].team, TEAM.BLUE);
   assert.equal(joined.state.players[1].role, ROLE.SPYMASTER);
+
+  const choseTeam = await emitAck(guest, 'lobby:choose-team', { team: TEAM.RED });
+  assert.equal(choseTeam.ok, true);
+  assert.equal(room.players[1].team, TEAM.RED);
+  assert.equal(room.players[1].role, ROLE.AGENT);
+  assert.equal((await emitAck(guest, 'lobby:choose-team', { team: 'GREEN' })).code, 'INVALID_ASSIGNMENT');
 });
 
 test('starting a game sends hidden identities only to spymasters and blocks late joins', async () => {
@@ -177,6 +183,10 @@ test('server validates clue giver, clue text, agent selection, correct/opponent/
   assert.equal((await emitAck(spySocket, 'game:give-clue', { word: room.board[0].word, count: 2 })).code, 'CLUE_MATCHES_CARD');
   assert.equal((await emitAck(spySocket, 'game:give-clue', { word: 'space', count: 2 })).code, 'INVALID_CLUE');
   assert.equal((await emitAck(spySocket, 'game:give-clue', { word: firstClue, count: 2 })).ok, true);
+  let clueView = server.roomManager.serializeFor(room.roomId, agent.id);
+  assert.deepEqual(clueView.clueHistory.map(({ word, count, team }) => ({ word, count, team })), [
+    { word: firstClue, count: 2, team },
+  ]);
   assert.equal((await emitAck(spySocket, 'game:select-card', { cardId: room.board[0].id })).code, 'AGENT_ONLY');
 
   const correct = room.board.find((card) => card.type === team);
@@ -191,6 +201,9 @@ test('server validates clue giver, clue text, agent selection, correct/opponent/
   const nextSpy = socketFor(room, sockets, otherTeam, ROLE.SPYMASTER).socket;
   const nextAgent = socketFor(room, sockets, otherTeam, ROLE.AGENT).socket;
   assert.equal((await emitAck(nextSpy, 'game:give-clue', { word: secondClue, count: 1 })).ok, true);
+  clueView = server.roomManager.serializeFor(room.roomId, agent.id);
+  assert.equal(clueView.clueHistory.length, 2);
+  assert.equal(clueView.clueHistory[1].word, secondClue);
   const neutral = room.board.find((card) => card.type === CARD.NEUTRAL && !card.revealed);
   assert.equal((await emitAck(nextAgent, 'game:select-card', { cardId: neutral.id })).turnEnded, true);
   assert.equal(room.currentTeam, team);

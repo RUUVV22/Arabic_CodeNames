@@ -7,6 +7,7 @@ import { ArabicText } from '../components/ArabicText';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ConnectionPill } from '../components/ConnectionPill';
 import { FormField } from '../components/FormField';
+import { InstallAppButton } from '../components/InstallAppButton';
 import { useGame } from '../context/GameContext';
 import { STATUS } from '../constants/game';
 import { colors } from '../theme/colors';
@@ -77,6 +78,7 @@ export function HomeScreen({ navigation }) {
         <PrimaryButton title="إنشاء غرفة" icon="add-circle-outline" variant="red" onPress={() => navigation.navigate('CreateRoom')} />
         <PrimaryButton title="الانضمام إلى غرفة" icon="enter-outline" variant="blue" onPress={() => navigation.navigate('JoinRoom')} />
         <PrimaryButton title="كيفية اللعب" icon="help-circle-outline" variant="ghost" onPress={() => navigation.navigate('HowToPlay')} />
+        <InstallAppButton />
       </View>
 
       <View style={styles.footer}>

@@ -43,6 +43,7 @@ class RoomManager {
       currentTeam: null,
       startingTeam: null,
       clue: null,
+      clueHistory: [],
       guessesRemaining: 0,
       remainingCards: { [TEAM.RED]: 0, [TEAM.BLUE]: 0 },
       winner: null,
@@ -170,6 +171,23 @@ class RoomManager {
     return room;
   }
 
+  chooseTeam({ socketId, team }) {
+    const { room, player } = this.requireSocketPlayer(socketId);
+    if (room.status !== STATUS.LOBBY) throw new GameError('LOBBY_ONLY');
+    if (!Object.values(TEAM).includes(team)) throw new GameError('INVALID_ASSIGNMENT');
+    if (player.team === team) return room;
+
+    const targetTeamHasSpymaster = room.players.some((candidate) => (
+      candidate.id !== player.id
+      && candidate.team === team
+      && candidate.role === ROLE.SPYMASTER
+    ));
+    player.team = team;
+    if (player.role === ROLE.SPYMASTER && targetTeamHasSpymaster) player.role = ROLE.AGENT;
+    this.touch(room);
+    return room;
+  }
+
   removePlayer({ socketId, targetPlayerId }) {
     const { room, player } = this.requireSocketPlayer(socketId);
     this.assertHost(room, player);
@@ -230,6 +248,7 @@ class RoomManager {
     room.currentTeam = null;
     room.startingTeam = null;
     room.clue = null;
+    room.clueHistory = [];
     room.guessesRemaining = 0;
     room.remainingCards = { [TEAM.RED]: 0, [TEAM.BLUE]: 0 };
     room.winner = null;
@@ -261,6 +280,7 @@ class RoomManager {
       givenBy: player.id,
       createdAt: Date.now(),
     };
+    room.clueHistory.push({ ...room.clue });
     room.guessesRemaining = cleanCount + 1;
     this.touch(room);
     return room;
@@ -356,6 +376,12 @@ class RoomManager {
         team: room.clue.team,
         givenBy: room.clue.givenBy,
       } : null,
+      clueHistory: room.clueHistory.map((clue) => ({
+        word: clue.word,
+        count: clue.count,
+        team: clue.team,
+        givenBy: clue.givenBy,
+      })),
       guessesRemaining: room.guessesRemaining,
       remainingCards: { ...room.remainingCards },
       winner: room.winner,
@@ -420,6 +446,7 @@ class RoomManager {
     room.startingTeam = generated.startingTeam;
     room.currentTeam = generated.startingTeam;
     room.clue = null;
+    room.clueHistory = [];
     room.guessesRemaining = 0;
     room.remainingCards = {
       [TEAM.RED]: room.board.filter((card) => card.type === TEAM.RED).length,

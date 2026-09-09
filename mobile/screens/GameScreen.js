@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { GameHeader } from '../components/GameHeader';
 import { TurnIndicator } from '../components/TurnIndicator';
 import { CluePanel } from '../components/CluePanel';
-import { GameCard } from '../components/GameCard';
+import { CARD_SUSPENSE_MS, GameCard } from '../components/GameCard';
+import { TurnTransitionOverlay } from '../components/TurnTransitionOverlay';
 import { GameResultModal } from '../components/GameResultModal';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ArabicText } from '../components/ArabicText';
@@ -24,6 +25,10 @@ export function GameScreen({ navigation }) {
     toggleMute,
   } = useGame();
   const { width } = useWindowDimensions();
+  const [selectingCardId, setSelectingCardId] = useState(null);
+  const revealedIds = useRef(null);
+  const previousClue = useRef(null);
+  const previousStatus = useRef(null);
 
   useEffect(() => {
     if (!session) navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
@@ -39,25 +44,78 @@ export function GameScreen({ navigation }) {
   const cardWidth = (boardWidth - cardGap * 4) / 5;
   const playerRole = isSpymaster ? 'قائد الفريق — ترى هويات البطاقات' : 'لاعب — اختر كلمات فريقك';
 
+  useEffect(() => {
+    const cards = gameState?.board || [];
+    const nextRevealed = new Set(cards.filter((card) => card.revealed).map((card) => card.id));
+    if (revealedIds.current) {
+      const revealedCard = cards.find((card) => card.revealed && !revealedIds.current.has(card.id));
+      if (revealedCard) {
+        const revealer = gameState.players.find((player) => player.id === revealedCard.revealedBy);
+        const effect = revealedCard.type === 'ASSASSIN'
+          ? 'assassin'
+          : revealedCard.type === revealer?.team
+            ? 'correct'
+            : 'wrong';
+        soundService.play(effect);
+      }
+    }
+    revealedIds.current = nextRevealed;
+  }, [gameState?.board, gameState?.players]);
+
+  useEffect(() => {
+    const clueKey = gameState?.clue ? `${gameState.clue.team}:${gameState.clue.word}:${gameState.clue.count}` : null;
+    if (clueKey && clueKey !== previousClue.current) soundService.play('clue');
+    previousClue.current = clueKey;
+  }, [gameState?.clue]);
+
+  useEffect(() => {
+    if (gameState?.status === STATUS.FINISHED && previousStatus.current === STATUS.ACTIVE && me) {
+      soundService.play(gameState.winner === me.team ? 'victory' : 'defeat');
+    }
+    previousStatus.current = gameState?.status;
+  }, [gameState?.status, gameState?.winner, me]);
+
   const teams = useMemo(() => [TEAM.RED, TEAM.BLUE], []);
   if (!gameState || !me) {
     return <ScreenContainer scroll={false} contentStyle={styles.center}><ArabicText style={styles.muted}>جارٍ تحميل الجولة…</ArabicText></ScreenContainer>;
   }
 
   const handleSelect = async (cardId) => {
-    await soundService.play('select');
-    const response = await actions.selectCard(cardId);
-    if (response.ok) await soundService.play('reveal');
+    if (selectingCardId) return;
+    setSelectingCardId(cardId);
+    soundService.play('select');
+    await new Promise((resolve) => setTimeout(resolve, CARD_SUSPENSE_MS));
+    await actions.selectCard(cardId);
+    setSelectingCardId(null);
   };
+
+  const leave = () => Alert.alert(
+    'مغادرة اللعبة',
+    'هل تريد إلغاء مشاركتك والخروج من الغرفة؟',
+    [
+      { text: 'البقاء', style: 'cancel' },
+      {
+        text: 'مغادرة',
+        style: 'destructive',
+        onPress: async () => {
+          await actions.leaveRoom();
+          navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+        },
+      },
+    ],
+  );
 
   return (
     <ScreenContainer scroll={false} contentStyle={styles.screen}>
       <GameHeader
         title={`الجولة ${gameState.round}`}
         subtitle={`${gameState.roomId} • ${playerRole}`}
+        onBack={leave}
         rightIcon={muted ? 'volume-mute-outline' : 'volume-high-outline'}
         onRightPress={toggleMute}
       />
+
+      <TurnTransitionOverlay team={gameState.currentTeam} />
 
       <View style={styles.scoreRow}>
         {teams.map((team) => (
@@ -77,7 +135,8 @@ export function GameScreen({ navigation }) {
             key={card.id}
             card={card}
             width={cardWidth}
-            disabled={!canSelect || busyAction === 'game:select-card'}
+            selecting={selectingCardId === card.id}
+            disabled={!canSelect || Boolean(selectingCardId) || busyAction === 'game:select-card'}
             onPress={handleSelect}
           />
         ))}
@@ -85,6 +144,8 @@ export function GameScreen({ navigation }) {
 
       <CluePanel
         clue={gameState.clue}
+        clueHistory={gameState.clueHistory}
+        showHistory={!isSpymaster}
         team={gameState.currentTeam}
         canGiveClue={gameState.status === STATUS.ACTIVE && isMyTurn && isSpymaster && !gameState.clue}
         waitingForClue={isMyTurn}
@@ -95,7 +156,7 @@ export function GameScreen({ navigation }) {
       {canSelect ? (
         <View style={styles.agentActions}>
           <ArabicText style={styles.guesses}>المحاولات المتاحة: {gameState.guessesRemaining}</ArabicText>
-          <PrimaryButton compact title="إنهاء الدور" icon="stop-circle-outline" variant="ghost" loading={busyAction === 'game:end-turn'} onPress={actions.endTurn} />
+          <PrimaryButton compact title="إنهاء الدور" icon="stop-circle-outline" variant="ghost" loading={busyAction === 'game:end-turn'} disabled={Boolean(selectingCardId)} onPress={actions.endTurn} />
         </View>
       ) : null}
 
