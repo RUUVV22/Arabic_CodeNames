@@ -17,7 +17,7 @@ export function PlayerList({ players, editable, currentPlayerId, onToggleRole, o
           <View style={styles.identity}>
             <View style={styles.nameLine}>
               {player.isHost ? <Ionicons name="star" size={13} color={colors.gold} /> : null}
-              <ArabicText weight="bold" numberOfLines={1} style={styles.name}>
+              <ArabicText weight="bold" numberOfLines={2} style={styles.name}>
                 {player.name}{player.id === currentPlayerId ? ' (أنت)' : ''}
               </ArabicText>
             </View>
@@ -53,24 +53,25 @@ export function PlayerList({ players, editable, currentPlayerId, onToggleRole, o
 const styles = StyleSheet.create({
   list: { gap: spacing.sm },
   row: {
-    minHeight: 54,
+    minHeight: 68,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: spacing.sm,
-    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
     borderRadius: radius.sm,
     backgroundColor: 'rgba(255,255,255,0.07)',
   },
   offline: { opacity: 0.47 },
   identity: { flex: 1, minWidth: 0 },
   nameLine: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.xs },
-  name: { flexShrink: 1, fontSize: 13 },
-  status: { color: colors.muted, fontSize: 10 },
-  role: { paddingVertical: 5, paddingHorizontal: 8, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.08)' },
+  name: { flexShrink: 1, fontSize: 16, lineHeight: 22 },
+  status: { color: colors.muted, fontSize: 11 },
+  role: { minHeight: 34, justifyContent: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.08)' },
   spyRole: { backgroundColor: colors.gold },
-  roleText: { color: colors.paperMuted, fontSize: 10 },
+  roleText: { color: colors.paperMuted, fontSize: 11 },
   spyRoleText: { color: colors.ink },
   actions: { flexDirection: 'row-reverse', gap: 3 },
-  actionButton: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  empty: { color: colors.muted, fontSize: 12, textAlign: 'center', paddingVertical: spacing.md },
+  actionButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  empty: { color: colors.muted, fontSize: 14, textAlign: 'center', paddingVertical: spacing.lg },
 });

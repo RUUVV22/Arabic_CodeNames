@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef } from 'react';
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { gsap } from 'gsap';
 import { ArabicText } from './ArabicText';
 import { cardColor, cardTextColor, colors } from '../theme/colors';
@@ -77,12 +78,14 @@ export const GameCard = memo(function GameCard({ card, width, disabled, selectin
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${card.word}${card.revealed ? '، مكشوفة' : ''}`}
+        accessibilityState={{ disabled: disabled || card.revealed, selected: card.revealed }}
         disabled={disabled || card.revealed}
         onPress={() => onPress(card.id)}
         style={({ pressed }) => [
           styles.card,
           { width, height: Math.max(50, width * 0.78) },
           (disabled || card.revealed) && !card.revealed && !card.type && styles.disabled,
+          card.revealed && styles.revealedCard,
           pressed && styles.pressed,
         ]}
       >
@@ -112,6 +115,18 @@ export const GameCard = memo(function GameCard({ card, width, disabled, selectin
             {card.word}
           </ArabicText>
         </Animated.View>
+
+        {card.revealed ? (
+          <>
+            <View pointerEvents="none" style={styles.revealedShade} />
+            <View pointerEvents="none" style={styles.revealedLabel}>
+              <Ionicons name="checkmark-circle" size={12} color={colors.white} />
+              <ArabicText weight="bold" numberOfLines={1} adjustsFontSizeToFit style={styles.revealedText}>
+                تم الاختيار
+              </ArabicText>
+            </View>
+          </>
+        ) : null}
       </Pressable>
     </Animated.View>
   );
@@ -138,6 +153,22 @@ const styles = StyleSheet.create({
   word: { color: colors.ink, textAlign: 'center', writingDirection: 'rtl', lineHeight: 18 },
   identityWord: { textAlign: 'center', writingDirection: 'rtl', lineHeight: 18, textShadowColor: 'rgba(0,0,0,0.2)', textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } },
   assassin: { position: 'absolute', top: 1, left: 5, color: colors.gold, fontSize: 12 },
+  revealedCard: { borderWidth: 3, borderColor: colors.gold },
+  revealedShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(3,9,16,0.30)' },
+  revealedLabel: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    left: 0,
+    minHeight: 16,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: 2,
+    backgroundColor: 'rgba(3,9,16,0.88)',
+  },
+  revealedText: { flexShrink: 1, color: colors.white, fontSize: 8, lineHeight: 11, textAlign: 'center' },
   disabled: { opacity: 0.68 },
   pressed: { opacity: 0.92 },
 });

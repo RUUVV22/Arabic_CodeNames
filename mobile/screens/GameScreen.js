@@ -145,7 +145,7 @@ export function GameScreen({ navigation }) {
       <CluePanel
         clue={gameState.clue}
         clueHistory={gameState.clueHistory}
-        showHistory={!isSpymaster}
+        showHistory
         team={gameState.currentTeam}
         canGiveClue={gameState.status === STATUS.ACTIVE && isMyTurn && isSpymaster && !gameState.clue}
         waitingForClue={isMyTurn}
